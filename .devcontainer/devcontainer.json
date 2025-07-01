@@ -1,0 +1,11 @@
+{
+  "name": "Django App",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/code",
+  "forwardPorts": [8000, 5678],
+  "settings": {},
+  "extensions": [
+    "ms-python.python"
+  ]
+}

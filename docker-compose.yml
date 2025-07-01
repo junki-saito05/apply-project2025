@@ -1,0 +1,99 @@
+services:
+  db:
+    image: mysql/mysql-server:8.0
+    container_name: django_mysql_apply
+    environment:
+      MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
+      MYSQL_ROOT_HOST: '%'
+      MYSQL_DATABASE: '${DB_DATABASE}'
+      MYSQL_USER: '${DB_USERNAME}'
+      MYSQL_PASSWORD: '${DB_PASSWORD}'
+      MYSQL_ALLOW_EMPTY_PASSWORD: 1
+      TZ: 'Asia/Tokyo'
+    command: --default-authentication-plugin=mysql_native_password
+    volumes:
+      - mysql-data:/var/lib/mysql
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: django_apply
+    command: python3 manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./django:/code
+      - ./django/public:/code/public
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: '${DB_DATABASE}'
+      DB_USERNAME: '${DB_USERNAME}'
+      DB_PASSWORD: '${DB_PASSWORD}'
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_FROM_ADDRESS: hello@example.com
+      MAIL_FROM_NAME: localシステム
+      AWS_ENDPOINT: http://minio:9001
+      AWS_URL: http://localhost:9000/apply-local
+      AWS_ACCESS_KEY_ID: minio
+      AWS_SECRET_ACCESS_KEY: password
+      AWS_DEFAULT_REGION: ap-northeast-1
+      AWS_BUCKET: apply-local
+    ports:
+      - "8000:8000"
+      - "5678:5678"  # debugpy用
+    depends_on:
+      - db
+
+  web:
+    image: nginx:latest
+    container_name: django_web_apply
+    volumes:
+      - ./django:/code
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - "${NGINX_PORT:-80}:80" # nginxポート
+    depends_on:
+      - app
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: nextjs_frontend_apply
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - app
+
+  mailpit:
+      image: 'axllent/mailpit:latest'
+      restart: unless-stopped
+      ports:
+          - '${MAILPIT_UI_PORT:-8025}:8025'
+
+  minio:
+    image: 'minio/minio'
+    container_name: s3_minio_apply
+    environment:
+        MINIO_ROOT_USER: minioadminuser
+        MINIO_ROOT_PASSWORD: minioadminpassword
+    command: minio server /data --address :9000 --console-address :9001
+    volumes:
+        - minio-data:/data
+    ports:
+        - '${MINIO_PORT:-9000}:9000'
+        - '${MINIO_CONSOLE_PORT:-9001}:9001'
+
+volumes:
+  mysql-data:
+    driver: local
+  minio-data:
+      driver: local
