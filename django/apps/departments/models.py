@@ -1,8 +1,9 @@
 from django.db import models
 
 class DepartmentLevel(models.IntegerChoices):
-    DIVISION = 1, '事業部'
-    SECTION = 2, '課'
+    PRESIDENT = 1, '社長'
+    DIVISION = 2, '事業部'
+    SECTION = 3, '課'
 
 class Department(models.Model):
     id = models.BigAutoField(primary_key=True)
