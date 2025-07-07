@@ -48,7 +48,7 @@ const handler = NextAuth({
 
           // 3. userオブジェクトに権限情報も含めて返す
           return {
-            id: credentials?.email ?? "",
+            id: userInfo.id,
             email: credentials?.email ?? "",
             username: userInfo.username,
             access: data.access,
@@ -88,6 +88,21 @@ const handler = NextAuth({
       // Googleログイン時
       if (account && account.provider === "google" && account.id_token) {
         console.log("Google ID Token:", account.id_token);
+        const tokenRes = await fetch(`${djangoApiUrl}/api/token/google/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id_token: account.id_token }),
+        });
+
+        if (tokenRes.ok) {
+          const jwtTokens = await tokenRes.json();
+          token.access = jwtTokens.access;
+          token.refresh = jwtTokens.refresh;
+        } else {
+          console.error("Googleログイン→トークン取得失敗:", await tokenRes.text());
+        }
         // GoogleのIDトークンでDjangoのユーザー情報を取得
         const res = await fetch(`${djangoApiUrl}/api/users/me/google/`, {
           method: "GET",
@@ -99,6 +114,7 @@ const handler = NextAuth({
         if (res.ok) {
           const userData = await res.json();
           token.hasMasterPermission = Boolean(userData.has_master_permission);
+          token.id = userData.id;
           token.email = userData.email;
           token.username = userData.username;
         }
@@ -106,6 +122,7 @@ const handler = NextAuth({
 
       // Credentialsログイン時
       if (account?.provider === "credentials" && user) {
+        token.id = user.id;
         token.access = user.access;
         token.refresh = user.refresh;
         token.email = user.email;
@@ -118,6 +135,7 @@ const handler = NextAuth({
     },
     async session({ session, token }) {
       // セッションにJWTトークンや権限情報を含める
+      session.user.id = typeof token.id === "number" ? token.id : Number(token.id);
       session.user.email = token.email;
       session.user.username = token.username;
       session.access = token.access;

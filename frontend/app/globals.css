@@ -48,6 +48,11 @@ body {
   border: none !important;
 }
 
+.child-list-group-item.active {
+  background-color: #78C2AD !important;
+  color: #f5f5f5 !important;
+}
+
 .child-list-group-item:hover {
   background-color: #78C2AD !important;
   color: #f5f5f5 !important;
@@ -60,4 +65,16 @@ body {
 
 .logout:hover {
   background-color: #d8e4e0 !important;
+}
+
+.btn-info {
+  background-color: #78C2AD !important;
+  border-color: #78C2AD !important;
+  color: #ffffff !important;
+}
+
+.btn-info:hover {
+  background-color: #ffffff !important;
+  border-color: #78C2AD !important;
+  color: #171717 !important;
 }
