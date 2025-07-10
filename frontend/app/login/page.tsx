@@ -2,21 +2,33 @@
 
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
+import { useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const searchParams = useSearchParams();
+  let callbackUrl = searchParams.get("callbackUrl") || "/";
+
+  if (callbackUrl === "/") {
+    callbackUrl = "/dashboard";
+  }
+
+  // Googleでログイン
+  const handleGoogleLogin = () => {
+    signIn("google", { callbackUrl });
+  };
 
   // Credentials（ID/PW）でサインイン
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleCredentialsLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError('');
-    const res = await signIn('credentials', {
+    const formData = new FormData(e.currentTarget);
+    const res = await signIn("credentials", {
+      email: formData.get("email"),
+      password: formData.get("password"),
+      callbackUrl,
       redirect: false,
-      email,
-      password,
-      callbackUrl: '/dashboard',
     });
     if (res?.error) {
       setError('ログインに失敗しました。ユーザー名またはパスワードを確認してください。');
@@ -38,7 +50,7 @@ export default function LoginPage() {
       </header>
       <div className="container mt-5" style={{ maxWidth: 400 }}>
         <h1 className="mb-4">ログイン</h1>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleCredentialsLogin}>
           <div className="mb-3">
             <label htmlFor="email" className="form-label">
               ユーザーID
@@ -75,7 +87,7 @@ export default function LoginPage() {
         <hr />
         <button
           className="btn btn-danger w-100"
-          onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+          onClick={handleGoogleLogin}
           style={{ marginTop: 16 }}
         >
           Googleでログイン
