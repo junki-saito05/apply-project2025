@@ -5,6 +5,8 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getDepartments, getDivisions, Department, Division } from '@/src/features/department/api/departmentApi';
 import { DEPARTMENT_LEVELS } from '@/src/features/department/types';
+import Button from '@mui/material/Button';
+import AddIcon from '@mui/icons-material/Add';
 
 export default function DepartmentListPage() {
   // 検索用state
@@ -106,9 +108,15 @@ export default function DepartmentListPage() {
         </div>
       </div>
       <div className="mb-3">
-        <Link href="/master/department/add" className="btn btn-info justify-content-start col-2">
+        <Button
+          component={Link}
+          href="/master/department/add"
+          variant="contained"
+          endIcon={<AddIcon />}
+          className="btn btn-info justify-content-start"
+        >
           新規登録
-        </Link>
+        </Button>
       </div>
       <div className="table-responsive">
         <table className="table table-bordered align-middle">

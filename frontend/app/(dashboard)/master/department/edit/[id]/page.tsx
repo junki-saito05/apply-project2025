@@ -5,6 +5,8 @@ import { useRouter, useParams } from 'next/navigation';
 import DepartmentForm from '@/src/features/department/components/DepartmentForm';
 import { getDepartment, updateDepartment, deleteDepartment } from '@/src/features/department/api/departmentApi';
 import type { Department, } from '@/src/features/department/api/departmentApi';
+import Button from '@mui/material/Button';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 export default function DepartmentEditPage() {
   const params = useParams();
@@ -29,9 +31,13 @@ export default function DepartmentEditPage() {
     <div>
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h1 className="mb-4">部門編集</h1>
-        <button className="btn btn-danger" onClick={handleDelete}>
+        <Button
+          variant="contained"
+          color="error"
+          startIcon={<DeleteIcon />}
+        >
           削除
-        </button>
+        </Button>
       </div>
       <DepartmentForm
         initialData={initialData}
