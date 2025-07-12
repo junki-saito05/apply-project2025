@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getDivisions, createDepartment, Division } from '../api/departmentApi';
+import { getDivisions, Division } from '../api/departmentApi';
 import type { Department } from '../api/departmentApi';
 import Link from 'next/link';
 import { DEPARTMENT_LEVELS, DepartmentLevel } from '../types';
 import { errorMessages } from "@/src/utils/messages";
+import Button from '@mui/material/Button';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import SaveIcon from '@mui/icons-material/Save';
 
 type DepartmentFormProps = {
   initialData?: Partial<Department>;
@@ -145,12 +148,27 @@ export default function DepartmentForm({
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <div className="mb-3 row">
         <div className="col-6 d-flex justify-content-start">
-          <Link href="/master/department" className="btn btn-secondary w-100 w-md-auto">
+          <Button
+            component={Link}
+            href="/master/department"
+            variant="outlined"
+            color="inherit"
+            startIcon={<ArrowBackIcon />}
+            className="btn btn-outline-secondary w-100 w-md-auto"
+          >
             戻る
-          </Link>
+          </Button>
         </div>
         <div className="col-6 d-flex justify-content-end">
-          <button type="submit" className="btn btn-primary w-100 w-md-auto">{submitLabel}</button>
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            endIcon={<SaveIcon />}
+            className="w-100 w-md-auto"
+          >
+            {submitLabel}
+          </Button>
         </div>
       </div>
     </form>

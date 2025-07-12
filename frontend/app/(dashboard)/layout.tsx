@@ -4,6 +4,8 @@ import { ReactNode } from "react";
 import Base from "./base";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
+import Button from '@mui/material/Button';
+import LogoutIcon from '@mui/icons-material/Logout';
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   // ログアウト処理
@@ -20,13 +22,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             </strong>
           </div>
           <div>
-            <button
-              type="button"
-              className="btn btn-outline-light logout"
+            <Button
+              variant="contained"
+              fullWidth
+              endIcon={<LogoutIcon />}
               onClick={handleLogout}
+              className="btn btn-outline-light logout"
             >
               ログアウト
-            </button>
+            </Button>
           </div>
         </nav>
       </header>

@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useSearchParams } from "next/navigation";
+import LoginIcon from '@mui/icons-material/Login';
+import HowToReg from '@mui/icons-material/HowToReg';
+import Button from '@mui/material/Button';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -80,19 +83,29 @@ export default function LoginPage() {
             />
           </div>
           {error && <div className="alert alert-danger">{error}</div>}
-          <button type="submit" className="btn btn-primary w-100">
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            fullWidth
+            endIcon={<LoginIcon />}
+            className="w-100"
+          >
             ログイン
-          </button>
+          </Button>
         </form>
         <hr />
-        <button
-          className="btn btn-danger w-100"
+        <Button
+          variant="contained"
+          color="warning"
+          fullWidth
+          endIcon={<HowToReg />}
           onClick={handleGoogleLogin}
-          style={{ marginTop: 16 }}
+          className="w-100"
         >
           Googleでログイン
-        </button>
-      </div>
+        </Button>
+      </div >
     </>
   );
 }
