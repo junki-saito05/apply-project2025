@@ -2,27 +2,27 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import DepartmentForm from '@/src/features/department/components/DepartmentForm';
-import { getDepartment, updateDepartment, deleteDepartment } from '@/src/features/department/api/departmentApi';
-import type { Department, } from '@/src/features/department/api/departmentApi';
+import UserForm from '@/src/features/user/components/UserForm';
+import { getUser, updateUser, deleteUser } from '@/src/features/user/api/userApi';
+import type { User, } from '@/src/features/user/api/userApi';
 import Button from '@mui/material/Button';
 import DeleteIcon from '@mui/icons-material/Delete';
 
-export default function DepartmentEditPage() {
+export default function UserEditPage() {
   const params = useParams();
   const id = Number(params.id);
-  const [initialData, setInitialData] = useState<Department | null>(null);
+  const [initialData, setInitialData] = useState<User | null>(null);
   const router = useRouter();
 
   const handleDelete = async () => {
     if (window.confirm('本当に削除しますか？')) {
-      await deleteDepartment(id);
-      router.push('/master/department?message=削除が完了しました');
+      await deleteUser(id);
+      router.push('/master/user?message=削除が完了しました');
     }
   };
 
   useEffect(() => {
-    getDepartment(id).then(setInitialData);
+    getUser(id).then(setInitialData);
   }, [id]);
 
   if (!initialData) return <div>読み込み中...</div>;
@@ -30,7 +30,7 @@ export default function DepartmentEditPage() {
   return (
     <div>
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h1 className="mb-4">部門編集</h1>
+        <h1 className="mb-4">社員編集</h1>
         <Button
           variant="contained"
           color="error"
@@ -40,13 +40,14 @@ export default function DepartmentEditPage() {
           削除
         </Button>
       </div>
-      <DepartmentForm
+      <UserForm
         initialData={initialData}
         onSubmit={async (data) => {
-          await updateDepartment(id, data);
-          router.push('/master/department?message=変更が完了しました');
+          await updateUser(id, data);
+          router.push('/master/user?message=変更が完了しました');
         }}
         submitLabel="変更"
+        isEdit={true}
       />
     </div>
   );
