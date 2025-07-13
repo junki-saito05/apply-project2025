@@ -77,11 +77,6 @@
   transform: translateX(0);
 }
 
-.sidebar .list-group,
-.sidebar nav {
-  margin-top: var(--header-height);
-}
-
 /* --- ハンバーガー（モバイルのみ） --- */
 .hamburger {
   display: none;
@@ -141,13 +136,6 @@
     top: calc((var(--header-height) - 2rem) / 2);
     z-index: 1201;
     color: #fff;
-  }
-
-  .sidebar .list-group,
-  .sidebar nav {
-    margin-top: var(--header-height);
-    /* padding-top: var(--header-height); */
-    /* margin-top: 0; */
   }
 
   .header .logo-link {
