@@ -240,6 +240,7 @@ body {
 main,
 .main-content,
 #__next>main {
+  margin-left: var(--sidebar-width);
   padding-top: var(--header-height);
   box-sizing: border-box;
 }
