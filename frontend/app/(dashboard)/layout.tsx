@@ -13,15 +13,16 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     signOut({ callbackUrl: "/login" });
   };
   return (
-    <>
-      <header className="header navbar navbar-expand-lg stickey-top p-2 shadow-sm">
+    <div>
+      <Base />
+      <header className="header p-2 shadow-sm">
         <nav className="d-flex w-100 align-items-center">
           <div className="flex-fill">
             <strong>
               <Link href="/dashboard" className="text-white text-decoration-none fs-3">精算システム</Link>
             </strong>
           </div>
-          <div>
+          <div className="me-2">
             <Button
               variant="contained"
               fullWidth
@@ -34,10 +35,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
         </nav>
       </header>
-      <div style={{ display: "flex", minHeight: "100vh" }}>
-        <Base />
-        <main style={{ flex: 1, padding: 32 }}>{children}</main>
-      </div>
-    </>
+      <main className="main-content">{children}</main>
+    </div>
   );
 }
