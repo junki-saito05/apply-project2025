@@ -1,20 +1,21 @@
 "use client";
 
 import { ReactNode } from "react";
-import Base from "./base";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import Button from '@mui/material/Button';
 import LogoutIcon from '@mui/icons-material/Logout';
+import dynamic from 'next/dynamic';
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
+
+  const Base = dynamic(() => import('./base'), { ssr: false });
   // ログアウト処理
   const handleLogout = () => {
     signOut({ callbackUrl: "/login" });
   };
   return (
     <div>
-      <Base />
       <header className="header p-2 shadow-sm">
         <nav className="d-flex w-100 align-items-center">
           <div className="flex-fill">
@@ -35,6 +36,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
         </nav>
       </header>
+      <Base />
       <main className="main-content">{children}</main>
     </div>
   );
