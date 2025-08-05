@@ -7,4 +7,5 @@ export const errorMessages = {
   passwordPolicy: () => `パスワードは半角数字・大文字・小文字・記号の混合で入力してください`,
   emailFormat: () => `メールアドレスの形式が正しくありません`,
   minAmount: (field: string, min: number) => `${field}は${min}円以上で入力してください`,
+  positiveInteger: (field: string) => `${field}は正の整数で入力してください`,
 };

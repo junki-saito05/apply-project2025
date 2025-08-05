@@ -4,9 +4,9 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import RetrieveAPIView, UpdateAPIView, DestroyAPIView
 from .models import Department
+from apps.accounts.models import User
 from .serializers import DepartmentSerializer
 from .serializers import DepartmentFormSerializer
-from .serializers import DepartmentSerializer
 from django.utils import timezone
 
 
@@ -69,3 +69,31 @@ class DepartmentDelete(DestroyAPIView):
         instance.deleted_by = self.request.user.id
         instance.deleted_at = timezone.now()
         instance.save()
+
+class DepartmentApproversView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            department = Department.objects.get(pk=pk)
+        except Department.DoesNotExist:
+            return Response({"detail": "指定された部門が存在しません。"}, status=404)
+
+        approvers = {}
+        current = department
+
+        while current:
+            users = User.objects.filter(department=current)
+            for u in users:
+                if u.position in [1, 2, 3]:
+                    approvers[u.position] = u.username
+            current = current.parent
+
+        # 補足として社長情報を補完
+        if 1 not in approvers:
+            president_depts = Department.objects.filter(level=1)
+            president_users = User.objects.filter(position=1, department__in=president_depts)
+            if president_users.exists():
+                approvers[1] = president_users.first().username
+
+        return Response(approvers)

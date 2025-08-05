@@ -29,18 +29,6 @@ export async function getApprovalRoutes(params?: {
 }
 
 /**
- * 事業部取得
- */
-// export async function getDivisions(): Promise<Division[]> {
-//   const res = await fetch(`${djangoApiUrl}/api/approvals/get/division/`, {
-//     method: "GET",
-//     headers: { "Content-Type": "application/json" },
-//   });
-//   if (!res.ok) throw new Error('事業部取得に失敗しました');
-//   return res.json();
-// }
-
-/**
  * 変更画面表示時の承認ルート情報取得
  */
 export async function getApproval(id: number): Promise<ApprovalRoute> {

@@ -5,6 +5,7 @@ from .views import DepartmentAdd
 from .views import DepartmentDetail
 from .views import DepartmentUpdate
 from .views import DepartmentDelete
+from .views import DepartmentApproversView
 
 urlpatterns = [
     path('api/departments/get/department/', DepartmentGetDepartments.as_view()),
@@ -13,4 +14,5 @@ urlpatterns = [
     path('api/departments/get/department/<int:pk>/', DepartmentDetail.as_view()),
     path('api/departments/update/<int:pk>/', DepartmentUpdate.as_view()),
     path('api/departments/delete/<int:pk>/', DepartmentDelete.as_view()),
+    path('api/departments/<int:pk>/approvers/', DepartmentApproversView.as_view()),
 ]

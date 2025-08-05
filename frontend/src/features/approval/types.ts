@@ -49,4 +49,10 @@ export type ApprovalRoute = {
   created_at: string;
   updated_at: string;
   steps: ApprovalStepResponse[];
+  approval_steps: ApprovalStepWithApprover[];
+};
+
+// 承認ルート表示用
+export type ApprovalStepWithApprover = ApprovalStepResponse & {
+  approver_name: string | null;
 };

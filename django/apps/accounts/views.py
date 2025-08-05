@@ -63,9 +63,12 @@ class MeView(APIView):
     def get(self, request):
         user = request.user
         return Response({
+            'id': getattr(user, 'id'),
             'email': user.email,
             'has_master_permission': getattr(user, 'has_master_permission', False),
             'username': getattr(user, 'username'),
+            'position': getattr(user, 'position'),
+            'department_id': getattr(user.department, 'id'),
         })
 
 class GoogleMeView(APIView):
@@ -86,9 +89,12 @@ class GoogleMeView(APIView):
         except User.DoesNotExist:
             return Response({'detail': 'ユーザーが見つかりません'}, status=status.HTTP_404_NOT_FOUND)
         return Response({
+            'id': getattr(user, 'id'),
             'email': user.email,
             'has_master_permission': getattr(user, 'has_master_permission', False),
             'username': user.username,
+            'position': getattr(user, 'position'),
+            'department_id': getattr(user.department, 'id'),
         })
 
 class EmailTokenObtainPairView(TokenObtainPairView):

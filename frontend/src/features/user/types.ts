@@ -6,3 +6,14 @@ export const POSITIONS = [
 ] as const;
 
 export type POSITION = typeof POSITIONS[number]['value'];
+
+export type User = {
+  id: number;
+  username: string;
+  email: string;
+  department: number;
+  position: number;
+  has_master_permission: boolean;
+  created_at: string;
+  updated_at: string;
+};
