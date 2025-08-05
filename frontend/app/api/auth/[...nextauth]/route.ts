@@ -54,6 +54,8 @@ const handler = NextAuth({
             access: data.access,
             refresh: data.refresh,
             has_master_permission: userInfo.has_master_permission,
+            position: userInfo.position,
+            department_id: userInfo.department_id,
           };
         } catch (e) {
           console.error("Authorize error:", e);
@@ -87,7 +89,6 @@ const handler = NextAuth({
     async jwt({ token, account, user }) {
       // Googleログイン時
       if (account && account.provider === "google" && account.id_token) {
-        console.log("Google ID Token:", account.id_token);
         const tokenRes = await fetch(`${djangoApiUrl}/api/token/google/`, {
           method: "POST",
           headers: {
@@ -117,6 +118,8 @@ const handler = NextAuth({
           token.id = userData.id;
           token.email = userData.email;
           token.username = userData.username;
+          token.position = userData.position;
+          token.department_id = userData.department_id;
         }
       }
 
@@ -127,6 +130,8 @@ const handler = NextAuth({
         token.refresh = user.refresh;
         token.email = user.email;
         token.username = user.username;
+        token.position = user.position;
+        token.department_id = user.department_id;
         // has_master_permissionはuserオブジェクトから取得
         token.hasMasterPermission = Boolean(user.has_master_permission);
       }
@@ -141,6 +146,8 @@ const handler = NextAuth({
       session.access = token.access;
       session.refresh = token.refresh;
       session.user.hasMasterPermission = token.hasMasterPermission === true;
+      session.user.position = token.position;
+      session.user.department_id = token.department_id;
       return session;
     },
   },

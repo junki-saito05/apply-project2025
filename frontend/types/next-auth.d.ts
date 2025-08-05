@@ -10,6 +10,8 @@ declare module "next-auth" {
       username?: string | null;
       image?: string | null;
       hasMasterPermission?: boolean;
+      position?: number | null;
+      department_id?: number | null;
     } & DefaultSession["user"];
   }
 
@@ -18,6 +20,8 @@ declare module "next-auth" {
     refresh?: string;
     username?: string;
     has_master_permission?: boolean;
+    position?: number;
+    department_id?: number;
   }
 }
 
@@ -28,5 +32,7 @@ declare module "next-auth/jwt" {
     refresh?: string;
     username?: string;
     email?: string | null;
+    position?: number | null;
+    department_id?: number | null;
   }
 }

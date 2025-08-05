@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'apps.departments',
     'apps.allowances',
     'apps.approvals',
+    'apps.business_trips',
 ]
 
 MIDDLEWARE = [
@@ -166,3 +167,6 @@ GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
 
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
+
+raw_ids = os.environ.get("SPECIAL_DEPARTMENT_IDS", "")
+SPECIAL_DEPARTMENT_IDS = [int(i) for i in raw_ids.split(",") if i.strip().isdigit()]
