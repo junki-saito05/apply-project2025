@@ -3,14 +3,14 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import TripPreApplySearchBox from '@/src/features/trip/components/TripPreApplySearchBox';
-import { BusinessTripRequest, BusinessTripRequestListItem, PRE_APPLY_STATUS, SearchValues } from '@/src/features/trip/types';
+import TripApplySearchBox from '@/src/features/trip/components/TripApplySearchBox';
+import { BusinessTripRequest, BusinessTripRequestListItem, APPLY_STATUS, SearchValues } from '@/src/features/trip/types';
 import Link from 'next/link';
-import { getTripPreApplies } from '@/src/features/trip/api/tripPreApplyApi';
+import { getTripApplies } from '@/src/features/trip/api/tripApplyApi';
 import Button from '@mui/material/Button';
 import AddIcon from '@mui/icons-material/Add';
 
-export default function TripPreApplyListPage() {
+export default function TripApplyListPage() {
   // 検索用state
   const [searchValues, setSearchValues] = useState({
     status: '', title: '', applicant: '', destination: ''
@@ -19,7 +19,7 @@ export default function TripPreApplyListPage() {
   const handleAutoSearch = useCallback(async (params: SearchValues) => {
     setLoading(true);
     try {
-      const data = await getTripPreApplies(params);
+      const data = await getTripApplies(params);
       setTripApplies(data);
     } catch (error) {
       console.error('検索失敗', error);
@@ -40,7 +40,7 @@ export default function TripPreApplyListPage() {
   useEffect(() => {
     if (message) {
       const timer = setTimeout(() => {
-        router.replace('/trip/pre-apply', { scroll: false });
+        router.replace('/trip/apply', { scroll: false });
       }, 4000);
       return () => clearTimeout(timer);
     }
@@ -65,9 +65,9 @@ export default function TripPreApplyListPage() {
           {message}
         </div>
       )}
-      <h1 className="mb-4">出張事前申請一覧</h1>
+      <h1 className="mb-4">出張精算申請一覧</h1>
       {/* 検索フォーム */}
-      <TripPreApplySearchBox
+      <TripApplySearchBox
         searchValues={searchValues}
         setSearchValues={setSearchValues}
         onAutoSearch={handleAutoSearch}
@@ -75,7 +75,7 @@ export default function TripPreApplyListPage() {
       <div className="mb-3">
         <Button
           component={Link}
-          href="/trip/pre-apply/add"
+          href="/trip/apply/add"
           variant="contained"
           endIcon={<AddIcon />}
           className="btn btn-info justify-content-start"
@@ -110,10 +110,10 @@ export default function TripPreApplyListPage() {
             ) : (
               tripApplies.map(req => (
                 <tr key={req.id}>
-                  <td>{PRE_APPLY_STATUS[req.status]}</td>
+                  <td>{APPLY_STATUS[req.status]}</td>
                   <td>{req.id}</td>
                   <td>
-                    <Link href={`/trip/pre-apply/edit/${req.id}`} className="text-primary">
+                    <Link href={`/trip/apply/edit/${req.id}`} className="text-primary">
                       {req.title}
                     </Link>
                   </td>

@@ -27,35 +27,33 @@ class CheckEmailView(APIView):
         return Response({"is_registered": exists}, status=status.HTTP_200_OK)
 
 class GoogleTokenView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
     def post(self, request):
-        id_token = request.data.get("id_token")
-        if not id_token:
+        google_id_token = request.data.get("id_token")
+        if not google_id_token:
             return Response({"detail": "ID token is required."}, status=status.HTTP_400_BAD_REQUEST)
 
+        id_info = verify_google_token(google_id_token)
+        if not id_info:
+            return Response({"detail": "Invalid Google ID token."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        email = id_info.get("email")
+        if not email:
+            return Response({"detail": "Email not found in ID token."}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
-            # GoogleのIDトークンを検証
-            request_adapter = google.auth.transport.requests.Request()
-            id_info = google.oauth2.id_token.verify_oauth2_token(id_token, request_adapter)
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({"detail": "User does not exist."}, status=status.HTTP_401_UNAUTHORIZED)
 
-            # emailからユーザーを取得（存在しない場合は401）
-            email = id_info.get("email")
-            if not email:
-                return Response({"detail": "Email not found in ID token."}, status=status.HTTP_400_BAD_REQUEST)
-
-            try:
-                user = User.objects.get(email=email)
-            except User.DoesNotExist:
-                return Response({"detail": "User does not exist."}, status=status.HTTP_401_UNAUTHORIZED)
-
-            # JWT発行
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
-            })
-
-        except ValueError as e:
-            return Response({"detail": "Invalid ID token.", "error": str(e)}, status=status.HTTP_401_UNAUTHORIZED)
+        # JWT発行
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+        }, status=status.HTTP_200_OK)
 
 class MeView(APIView):
     permission_classes = [IsAuthenticated]

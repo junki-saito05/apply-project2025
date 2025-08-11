@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback } from 'react';
-import TripApplyForm from '@/src/features/trip/components/tripApplyForm';
-import { createTripPreApply } from '@/src/features/trip/api/tripApplyApi';
+import TripPreApplyForm from '@/src/features/trip/components/tripPreApplyForm';
+import { createTripPreApply } from '@/src/features/trip/api/tripPreApplyApi';
 import { useRouter } from 'next/navigation';
 
 export default function TripPreApplyAddPage() {
@@ -12,7 +12,7 @@ export default function TripPreApplyAddPage() {
   return (
     <div>
       <h1 className="mb-4">出張事前申請</h1>
-      <TripApplyForm
+      <TripPreApplyForm
         mode="applicant_edit"
         onBack={handleBack}
         onSubmit={async (data) => {

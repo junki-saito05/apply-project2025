@@ -13,21 +13,18 @@ import AllowanceSelector from '@/src/features/trip/components/AllowanceSelector'
 import { getAllowances, AllowanceMaster } from '@/src/features/allowance/api/allowanceApi';
 import { checkAllowanceValid } from '@/src/utils/checkAllowanceValid';
 import { errorMessages } from '@/src/utils/messages';
-import { EXPENSE_TYPES, TRANSPORT_MODE_OPTIONS, Enum_APPLY_STATUS, APPLY_STATUS, ExpenseItem, TripApplyFormValues, APPROVAL_HISTORY_STATUS, TripApplyDetail } from '@/src/features/trip/types';
+import { EXPENSE_TYPES, TRANSPORT_MODE_OPTIONS, Enum_PRE_APPLY_STATUS, PRE_APPLY_STATUS, ExpenseItem, TripApplyFormValues, APPROVAL_HISTORY_STATUS, TripPreApplyDetail } from '@/src/features/trip/types';
 import { fetchFareAmount, getApproversName } from '@/src/features/trip/api/tripCommonApi';
-import { getPreApprovedTrips } from '@/src/features/trip/api/tripApplyApi';
 import { getApproval } from "@/src/features/approval/api/approvalApi";
 import { ApprovalStepResponse } from "@/src/features/approval/types";
 import { STEP_TYPES } from "@/src/features/approval/types";
 import { POSITIONS } from '@/src/features/user/types';
 import { formatDatetime } from '@/src//utils/date';
 
-type Mode = 'applicant_view_only' | 'applicant_edit' | 'approver' | 'special_department_view' | 'checker' | 'settle';
+type Mode = 'applicant_view_only' | 'applicant_edit' | 'approver' | 'special_department_view' | 'checker';
 
 type TripApplyFormProps = {
-  id?: number;
-  initialData?: Partial<TripApplyDetail>;
-  initialParentRequestId?: number;
+  initialData?: Partial<TripPreApplyDetail>;
   onSubmit: (data: TripApplyFormValues) => Promise<void>;
   submitLabel?: string;
 
@@ -38,13 +35,10 @@ type TripApplyFormProps = {
   onApprove?: (comment: string) => Promise<void>;
   onReject?: (comment: string) => Promise<void>;
   onConfirm?: (comment: string) => Promise<void>;
-  onSettle?: (comment: string) => Promise<void>;
 };
 
-export default function TripApplyForm({
-  id,
+export default function TripPreApplyForm({
   initialData,
-  initialParentRequestId,
   onSubmit,
   submitLabel = '申請',
   isUserTurn,
@@ -53,11 +47,8 @@ export default function TripApplyForm({
   onApprove,
   onReject,
   onConfirm,
-  onSettle,
 }: TripApplyFormProps) {
   // 申請基本情報
-  const [parentRequestId, setParentRequestId] = useState<number>();
-  const [preapprovedTrips, setPreapprovedTrips] = useState<TripApplyDetail[]>([]);
   const [title, setTitle] = useState(initialData?.title ?? '');
   const [startDate, setStartDate] = useState(initialData?.start_date ?? '');
   const [startTime, setStartTime] = useState(initialData?.start_time ?? '');
@@ -70,7 +61,7 @@ export default function TripApplyForm({
   const [approvers, setApprovers] = useState<Record<number, string>>({});
   const [allowanceMasters, setAllowanceMasters] = useState<AllowanceMaster[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<'approve' | 'reject' | 'confirm' | 'settle' | null>(null);
+  const [modalType, setModalType] = useState<'approve' | 'reject' | 'confirm' | null>(null);
   const [modalComment, setModalComment] = useState('');
 
   const POSITION_LABELS = Object.fromEntries(POSITIONS.map(p => [p.value, p.label]));
@@ -90,14 +81,13 @@ export default function TripApplyForm({
   );
 
   // 承認待ちの状態かどうか判定
-  const isPending = applyStatus === Enum_APPLY_STATUS.Pending;
+  const isPending = applyStatus === Enum_PRE_APPLY_STATUS.Pending;
 
   const isEditable = mode === 'applicant_edit';
   const isApprover = mode === 'approver';
   const isChecker = mode === 'checker';
-  const isSettle = mode === 'settle';
   const isRejectedAndOwner =
-    applyStatus === Enum_APPLY_STATUS.Rejected &&
+    applyStatus === Enum_PRE_APPLY_STATUS.Rejected &&
     session?.user?.id === initialData?.request_user_id;
 
   const isEditableFinal = isEditable || isRejectedAndOwner;
@@ -105,11 +95,8 @@ export default function TripApplyForm({
   // 承認・却下ボタン表示判定
   const showApproveRejectButtons = isApprover && isPending && isUserTurn;
 
-  // 確認ボタン表示判定
+  // 確認ボタン表示設定判定
   const showConfirmButton = isChecker && isUserTurn;
-
-  // 精算済ボタン表示判定
-  const showSettleButton = isSettle;
 
   // 駅検索モーダル関連
   const [showRouteModal, setShowRouteModal] = useState(false);
@@ -229,14 +216,6 @@ export default function TripApplyForm({
     setModalOpen(true);
   };
 
-  // 精算済にするボタン押下時
-  const handleSettleClick = () => {
-    setModalType('settle');
-    setModalComment('');
-    setCommentError('');
-    setModalOpen(true);
-  };
-
   // モーダルキャンセル
   const handleModalCancel = () => {
     setModalOpen(false);
@@ -257,8 +236,6 @@ export default function TripApplyForm({
         await onReject(modalComment);
       } else if (modalType === 'confirm' && onConfirm) {
         await onConfirm(modalComment);
-      } else if (modalType === 'settle' && onSettle) {
-        await onSettle(modalComment);
       }
       setModalOpen(false);
     } catch (err) {
@@ -329,7 +306,7 @@ export default function TripApplyForm({
 
     const formData: TripApplyFormValues = {
       title,
-      request_type: 2,
+      request_type: 1,
       status: 1,
       start_date: startDate,
       start_time: startTime,
@@ -339,7 +316,6 @@ export default function TripApplyForm({
       approval_route_master_id: approvalRouteId,
       expenses: expenses.filter(exp => exp.expense_type !== 3), // 手当以外
       allowances,
-      parent_request_id: parentRequestId,
     };
     try {
       if (onSubmit) {
@@ -349,38 +325,6 @@ export default function TripApplyForm({
       setError(`${submitLabel}に失敗しました`);
     }
   };
-
-  // 承認済の事前申請を取得
-  useEffect(() => {
-    if (initialParentRequestId !== undefined) {
-      setParentRequestId(initialParentRequestId);
-    }
-  }, [initialParentRequestId]);
-
-  useEffect(() => {
-    if (status !== 'authenticated') return;
-
-    getPreApprovedTrips(id, parentRequestId)
-      .then(setPreapprovedTrips)
-      .catch(e => console.error('事前申請の取得に失敗', e));
-  }, [status, parentRequestId]);
-
-  // 事前申請の選択によるフィールド更新
-  useEffect(() => {
-    if (!parentRequestId) return;
-
-    const selected = preapprovedTrips.find(t => t.id === parentRequestId);
-    // 詳細画面ではinitialDataを優先
-    if (selected && !initialData) {
-      setTitle(selected.title ?? '');
-      setStartDate(selected.start_date ?? '');
-      setStartTime(selected.start_time ?? '');
-      setEndDate(selected.end_date ?? '');
-      setEndTime(selected.end_time ?? '');
-      setDestination(selected.destination ?? '');
-      setExpenses(selected.expenses ?? []);
-    }
-  }, [parentRequestId, preapprovedTrips, initialData]);
 
   useEffect(() => {
     async function fetchMasters() {
@@ -487,25 +431,6 @@ export default function TripApplyForm({
   return (
     <>
       <form onSubmit={handleSubmit}>
-        <div className="mb-3">
-          <label className="form-label">事前申請の選択</label>
-          <select
-            className="form-select"
-            onChange={(e) => {
-              const selectedId = Number(e.target.value);
-              setParentRequestId(selectedId);
-            }}
-            value={parentRequestId !== null ? String(parentRequestId) : ''}
-            disabled={!isEditableFinal}
-          >
-            <option value="">選択してください</option>
-            {preapprovedTrips.map(trip => (
-              <option key={trip.id} value={trip.id}>
-                {trip.title}（{trip.start_date}〜{trip.end_date}）
-              </option>
-            ))}
-          </select>
-        </div>
         <div className="mb-3">
           <label className="form-label">事前申請タイトル</label>
           <input
@@ -751,7 +676,7 @@ export default function TripApplyForm({
             <ul className="list-group w-100 w-md-auto">
               {approval_histories.map(h => (
                 <li key={h.id} className="list-group-item">
-                  <div><b>{h.action_user_name}（{POSITION_LABELS[h.action_user_position]}）: {APPLY_STATUS[h.status]}</b></div>
+                  <div><b>{h.action_user_name}（{POSITION_LABELS[h.action_user_position]}）: {PRE_APPLY_STATUS[h.status]}</b></div>
                   {h.comment && (
                     <div>コメント：{h.comment}</div>
                   )}
@@ -761,7 +686,7 @@ export default function TripApplyForm({
             </ul>
           </div>
         )}
-        {!isEditableFinal && !showApproveRejectButtons && !showConfirmButton && !showSettleButton && (
+        {!isEditableFinal && !showApproveRejectButtons && !showConfirmButton && (
           <div className="mb-3 row">
             <div className="col-6 d-flex justify-content-start">
               <Button variant="outlined" onClick={onBack} color="inherit" startIcon={<ArrowBackIcon />} className="btn btn-outline-secondary w-100 w-md-auto">
@@ -866,56 +791,6 @@ export default function TripApplyForm({
               </Button>
             </div>
           </div>
-        )}
-        {showSettleButton && (
-          <>
-            <div className="mb-3 row">
-              <div className="col-6 d-flex justify-content-start">
-                <Button
-                  variant="outlined"
-                  onClick={onBack}
-                  color="inherit"
-                  startIcon={<ArrowBackIcon />}
-                  className="btn btn-outline-secondary w-100 w-md-auto"
-                >
-                  戻る
-                </Button>
-              </div>
-              <div className="col-6 d-flex justify-content-end">
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={handleSettleClick}
-                  className="w-100 w-md-auto"
-                >
-                  精算済にする
-                </Button>
-              </div>
-            </div>
-            {/* 確認モーダル */}
-            <Dialog open={modalOpen} onClose={handleModalCancel} maxWidth="sm" fullWidth>
-              <div style={{ padding: 24 }}>
-                <h2>確認</h2>
-                <TextField
-                  label="コメント（任意・100文字以内）"
-                  multiline
-                  rows={4}
-                  fullWidth
-                  value={modalComment}
-                  onChange={e => setModalComment(e.target.value)}
-                  error={!!commentError}
-                  helperText={commentError || '※コメントは任意です'}
-                  inputProps={{ maxLength: 100 }}
-                />
-                <div className="my-3 d-flex gap-2 justify-content-end">
-                  <Button variant="outlined" onClick={handleModalCancel}>キャンセル</Button>
-                  <Button variant="contained" color="primary" onClick={handleModalSubmit}>
-                    精算済にする
-                  </Button>
-                </div>
-              </div>
-            </Dialog>
-          </>
         )}
       </form>
       {/* 駅検索モーダル */}

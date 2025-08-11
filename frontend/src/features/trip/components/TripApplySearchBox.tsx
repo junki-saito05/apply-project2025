@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { SEARCH_PRE_APPLY_STATUS, SearchValues } from '@/src/features/trip/types';
+import { SEARCH_APPLY_STATUS, SearchValues } from '@/src/features/trip/types';
 
 const DEBOUNCE_INTERVAL = 300;
 
@@ -20,7 +20,7 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-export default function TripPreApplySearchBox({
+export default function TripApplySearchBox({
   searchValues,
   setSearchValues,
   onAutoSearch,
@@ -44,7 +44,7 @@ export default function TripPreApplySearchBox({
               onChange={e => setSearchValues({ ...searchValues, status: e.target.value })}
             >
               <option value="">すべて</option>
-              {Object.entries(SEARCH_PRE_APPLY_STATUS).map(([value, label]) => (
+              {Object.entries(SEARCH_APPLY_STATUS).map(([value, label]) => (
                 <option key={value} value={value}>{label}</option>
               ))}
             </select>

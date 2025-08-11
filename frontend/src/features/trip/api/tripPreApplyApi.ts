@@ -2,36 +2,14 @@ import { getSession } from "next-auth/react";
 import { getAuthHeaders } from './tripCommonApi';
 import { BusinessTripRequestListItem } from '@/src/features/trip/types';
 import { TripApplyFormValues } from '@/src/features/trip/types';
-import type { TripApplyDetail } from '@/src/features/trip/types';
+import type { TripPreApplyDetail } from '@/src/features/trip/types';
 
 const djangoApiUrl = process.env.NEXT_PUBLIC_DJANGO_API_URL;
 
 /**
- * 事前承認済みの出張申請一覧を取得
+ * 出張事前申請一覧情報取得
  */
-export async function getPreApprovedTrips(id?: number | null, currentParentId?: number | null) {
-  const headers = await getAuthHeaders();
-
-  const params = new URLSearchParams();
-  if (id) params.append('current_id', String(id));
-  if (currentParentId) params.append('current_parent_id', String(currentParentId));
-
-  const res = await fetch(`${djangoApiUrl}/api/business-trip-requests/pre-apply/approved/?${params.toString()}`, {
-    headers,
-  });
-
-  if (!res.ok) {
-    throw new Error('事前申請一覧の取得に失敗しました');
-  }
-
-  const data = await res.json();
-  return data;
-}
-
-/**
- * 出張精算申請一覧情報取得
- */
-export async function getTripApplies(
+export async function getTripPreApplies(
   extraParams: Record<string, string | undefined> = {}
 ): Promise<BusinessTripRequestListItem[]> {
   const session = await getSession();
@@ -44,7 +22,7 @@ export async function getTripApplies(
   if (user.position != null) queryObject.position = String(user.position);
   if (user.department_id != null) queryObject.department = String(user.department_id);
 
-  // 検索条件(extraParams)を追加する
+  // 検索条件
   Object.entries(extraParams).forEach(([key, val]) => {
     if (val && val.trim() !== '') {
       queryObject[key] = val;
@@ -55,7 +33,7 @@ export async function getTripApplies(
   const query = new URLSearchParams(queryObject).toString();
 
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_DJANGO_API_URL}/api/business-trip-requests/apply/get/?${query}`,
+    `${process.env.NEXT_PUBLIC_DJANGO_API_URL}/api/business-trip-requests/pre-apply/get/?${query}`,
     {
       headers: {
         Authorization: `Bearer ${session.access}`,
@@ -71,14 +49,14 @@ export async function getTripApplies(
 }
 
 /**
- * 出張精算申請登録
+ * 出張事前申請登録
  */
-export async function createTripApply(data: TripApplyFormValues) {
+export async function createTripPreApply(data: TripApplyFormValues) {
   const session = await getSession();
   if (!session?.access) {
     throw new Error('アクセストークンを取得できませんでした');
   }
-  const res = await fetch(`${djangoApiUrl}/api/business-trip-requests/apply/create/`, {
+  const res = await fetch(`${djangoApiUrl}/api/business-trip-requests/pre-apply/create/`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -97,38 +75,32 @@ export async function createTripApply(data: TripApplyFormValues) {
 /**
  * 申請詳細取得
  */
-export async function getTripApplyDetail(id: number): Promise<TripApplyDetail> {
+export async function getTripPreApplyDetail(id: number): Promise<TripPreApplyDetail> {
   const headers = await getAuthHeaders();
 
-  const res = await fetch(
-    `${djangoApiUrl}/api/business-trip-requests/apply/detail/${id}/`,
-    { headers }
-  );
+  const res = await fetch(`${djangoApiUrl}/api/business-trip-requests/pre-apply/detail/${id}/`, {
+    headers,
+  });
 
   if (!res.ok) {
     throw new Error('申請情報の取得に失敗しました');
   }
 
-  const data: TripApplyDetail = await res.json();
+  const data = await res.json();
 
-  // parent_request_id がない場合もnullが返るようにする
-  if (data.parent_request_id === undefined) {
-    data.parent_request_id = null;
-  }
-
-  return data as TripApplyDetail;
+  return data as TripPreApplyDetail;
 }
 
 /**
  * 承認処理
  */
-export async function approveTripApply(
+export async function approveTripPreApply(
   id: number,
   comment: string
 ): Promise<void> {
   const headers = await getAuthHeaders();
 
-  const res = await fetch(`${djangoApiUrl}/api/business-trip-requests/apply/approve/${id}/`, {
+  const res = await fetch(`${djangoApiUrl}/api/business-trip-requests/approve/${id}/`, {
     method: 'POST',
     headers,
     body: JSON.stringify({ comment }),
@@ -143,13 +115,13 @@ export async function approveTripApply(
 /**
  * 却下処理
  */
-export async function rejectTripApply(
+export async function rejectTripPreApply(
   id: number,
   comment: string
 ): Promise<void> {
   const headers = await getAuthHeaders();
 
-  const res = await fetch(`${djangoApiUrl}/api/business-trip-requests/apply/reject/${id}/`, {
+  const res = await fetch(`${djangoApiUrl}/api/business-trip-requests/reject/${id}/`, {
     method: 'POST',
     headers,
     body: JSON.stringify({ comment }),
@@ -164,10 +136,10 @@ export async function rejectTripApply(
 /**
  * 削除処理
  */
-export async function deleteTripApply(id: number): Promise<void> {
+export async function deleteTripPreApply(id: number): Promise<void> {
   const headers = await getAuthHeaders();
 
-  const res = await fetch(`${djangoApiUrl}/api/business-trip-requests/apply/delete/${id}/`, {
+  const res = await fetch(`${djangoApiUrl}/api/business-trip-requests/pre-apply/delete/${id}/`, {
     method: 'DELETE',
     headers,
   });
@@ -180,9 +152,9 @@ export async function deleteTripApply(id: number): Promise<void> {
 /**
  * 再申請処理
  */
-export async function updateTripApply(id: number, data: any) {
+export async function updateTripPreApply(id: number, data: any) {
   const headers = await getAuthHeaders();
-  const res = await fetch(`${djangoApiUrl}/api/business-trip-requests/apply/update/${id}/`, {
+  const res = await fetch(`${djangoApiUrl}/api/business-trip-requests/pre-apply/update/${id}/`, {
     method: 'POST',
     headers,
     body: JSON.stringify(data),
@@ -194,9 +166,9 @@ export async function updateTripApply(id: number, data: any) {
 /**
  * 確認処理
  */
-export async function confirmTripApply(id: number, comment: string) {
+export async function confirmTripPreApply(id: number, comment: string) {
   const headers = await getAuthHeaders();
-  const res = await fetch(`${djangoApiUrl}/api/business-trip-requests/apply/confirm/${id}/`, {
+  const res = await fetch(`${djangoApiUrl}/api/business-trip-requests/pre-apply/confirm/${id}/`, {
     method: 'POST',
     headers,
     body: JSON.stringify({ comment }),
@@ -205,25 +177,4 @@ export async function confirmTripApply(id: number, comment: string) {
     throw new Error('確認に失敗しました');
   }
   return res.json();
-}
-
-/**
- * 精算処理
- */
-export async function settleTripApply(
-  id: number,
-  comment: string
-): Promise<void> {
-  const headers = await getAuthHeaders();
-
-  const res = await fetch(`${djangoApiUrl}/api/business-trip-requests/apply/settle/${id}/`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ comment }),
-  });
-
-  if (!res.ok) {
-    const data = await res.json();
-    throw new Error(data.detail || '精算処理に失敗しました');
-  }
 }

@@ -6,7 +6,8 @@
 
 1. develop ブランチからローカルにクローンする
 
-2. .env.example をコピーして.env ファイルを作成する
+2. .env.sample をコピーして.env ファイルを作成する
+   この.env ファイルには、バックエンドである Django 側の環境変数も記載している
 
 3. frontend ディレクトリ内の`sample.env.local`をコピーして`.env.local`を作成する
 
@@ -120,7 +121,7 @@ python manage.py initial_data
 
 2. Django 側のクライアント ID の設定
 
-- Django ディレクトリ内の.env ファイルを作成し、1 で発行されたクライアント ID を設定
+- .env.example をコピーして作成した.env ファイル内にある GOOGLE_CLIENT_ID に、1 で発行されたクライアント ID を設定
 
 ```
 GOOGLE_CLIENT_ID = "xxxxxxxxxxxx.apps.googleusercontent.com"
