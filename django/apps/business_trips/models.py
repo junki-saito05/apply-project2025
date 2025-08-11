@@ -5,17 +5,16 @@ from apps.approvals.models import ApprovalRouteMaster, ApprovalStepMaster
 from django.utils import timezone
 
 class BusinessTripRequest(models.Model):
-    REQUEST_TYPE_CHOICES = [
-        (1, '事前申請'),
-        (2, '精算申請'),
-    ]
+    class RequestType(models.IntegerChoices):
+        PRE_APPLY = 1, '事前申請'
+        APPLY = 2, '精算申請'
 
-    STATUS_CHOICES = [
-        (1, '承認待ち'),
-        (2, '却下'),
-        (3, '承認済'),
-        (4, '精算済'),
-    ]
+    class Status(models.IntegerChoices):
+        PENDING = 1, '承認待ち'
+        REJECTED = 2, '却下'
+        APPROVED = 3, '承認済'
+        CONFIRMED = 4, '確認済'
+        SETTLED = 5, '精算済'
 
     id = models.BigAutoField(primary_key=True)
     title = models.CharField(max_length=50)
@@ -42,8 +41,12 @@ class BusinessTripRequest(models.Model):
         related_name='business_trip_requests',
         verbose_name='承認ルート'
     )
-    request_type = models.PositiveSmallIntegerField(choices=REQUEST_TYPE_CHOICES)
-    status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES)
+    request_type = models.PositiveSmallIntegerField(
+        choices=RequestType.choices
+    )
+    status = models.PositiveSmallIntegerField(
+        choices=Status.choices
+    )
     destination = models.CharField(max_length=50)
     start_date = models.DateField()
     start_time = models.TimeField()
@@ -61,14 +64,13 @@ class BusinessTripRequest(models.Model):
         db_table = 'business_trip_requests'
 
 class ApprovalHistory(models.Model):
-    STATUS_CHOICES = [
-        (0, '申請'),
-        (1, '承認待ち'),
-        (2, '却下'),
-        (3, '承認済'),
-        (4, '確認済'),
-        (5, '精算済'),
-    ]
+    class Status(models.IntegerChoices):
+        APPLIED = 0, '申請'
+        PENDING = 1, '承認待ち'
+        REJECTED = 2, '却下'
+        APPROVED = 3, '承認済'
+        CONFIRMED = 4, '確認済'
+        SETTLED = 5, '精算済'
 
     id = models.BigAutoField(primary_key=True)
     business_trip_request = models.ForeignKey(
@@ -101,7 +103,10 @@ class ApprovalHistory(models.Model):
         null=True,
         blank=True
     )
-    status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES, default=0)
+    status = models.PositiveSmallIntegerField(
+        choices=Status.choices,
+        default=Status.APPLIED
+    )
     comment = models.TextField(max_length=100, null=True, blank=True)
 
     created_at = models.DateTimeField(default=timezone.now)
@@ -119,21 +124,19 @@ class ApprovalHistory(models.Model):
         return f"ApprovalHistory(id={self.id}, status={self.get_status_display()}, action_user={self.action_user}, next_user={self.next_user})"
 
 class BusinessTripExpenseHistory(models.Model):
-    EXPENSE_TYPE_CHOICES = [
-        (1, '交通費'),
-        (2, 'ホテル代'),
-    ]
+    class ExpenseType(models.IntegerChoices):
+        TRANSPORTATION = 1, '交通費'
+        HOTEL = 2, 'ホテル代'
 
-    TRANSPORT_MODE_CHOICES = [
-        (1, '電車'),
-        (2, 'バス'),
-        (3, '飛行機'),
-        (4, '社用車'),
-        (5, 'フェリー'),
-        (6, 'タクシー'),
-        (7, 'レンタカー'),
-        (99, 'その他'),
-    ]
+    class TransportMode(models.IntegerChoices):
+        TRAIN = 1, '電車'
+        BUS = 2, 'バス'
+        AIRPLANE = 3, '飛行機'
+        COMPANY_CAR = 4, '社用車'
+        FERRY = 5, 'フェリー'
+        TAXI = 6, 'タクシー'
+        RENTAL_CAR = 7, 'レンタカー'
+        OTHER = 99, 'その他'
 
     id = models.BigAutoField(primary_key=True)
     business_trip_request = models.ForeignKey(
@@ -141,9 +144,11 @@ class BusinessTripExpenseHistory(models.Model):
         on_delete=models.CASCADE,
         db_column='business_trip_request_id'
     )
-    expense_type = models.PositiveSmallIntegerField(choices=EXPENSE_TYPE_CHOICES)
+    expense_type = models.PositiveSmallIntegerField(
+        choices=ExpenseType.choices
+    )
     transport_mode = models.PositiveSmallIntegerField(
-        choices=TRANSPORT_MODE_CHOICES, null=True, blank=True
+        choices=TransportMode.choices, null=True, blank=True
     )
     departure_place = models.CharField(max_length=50, null=True, blank=True)
     arrival_place = models.CharField(max_length=50, null=True, blank=True)

@@ -101,12 +101,6 @@ export default function AllowanceSelector({
     onSelect(selected, amount, description);
   };
 
-  useEffect(() => {
-    console.log('AllowanceSelector filtered:', filtered);
-    console.log('selectedAllowanceId:', selectedAllowanceId);
-    console.log({ startDate, endDate, startTime, endTime });
-  }, [filtered, selectedAllowanceId, startDate, endDate, startTime, endTime]);
-
   return (
     <div>
       {errorMessage && (

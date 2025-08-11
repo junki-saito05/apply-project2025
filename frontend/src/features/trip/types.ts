@@ -9,6 +9,12 @@ export const EXPENSE_TYPES = [
 
 export type ExpenseType = typeof EXPENSE_TYPES[number]['value'];
 
+export const SEARCH_PRE_APPLY_STATUS: { [key: number]: string } = {
+  1: '承認待ち',
+  2: '却下',
+  3: '承認済',
+};
+
 export const PRE_APPLY_STATUS: { [key: number]: string } = {
   0: '申請',
   1: '承認待ち',
@@ -78,6 +84,7 @@ export type TripApplyFormValues = {
     amount: number;
     description: string;
   }[];
+  parent_request_id?: number | null;
 };
 
 export type TripPreApplyDetail = TripApplyFormValues & {
@@ -91,17 +98,57 @@ export type TripPreApplyDetail = TripApplyFormValues & {
 
 export const APPROVAL_HISTORY_STATUS = {
   Pending: 1,     // 未処理・承認待ち
-  Approved: 3,    // 承認済
   Rejected: 2,    // 却下
-  Confirmed: 5,   // 確認済（必要に応じ）
+  Approved: 3,    // 承認済
+  Confirmed: 4,   // 確認済
+  Settled: 5,     // 精算済
 } as const;
 type ApprovalHistoryStatus = typeof APPROVAL_HISTORY_STATUS[keyof typeof APPROVAL_HISTORY_STATUS];
 
-export const APPLY_STATUS: { [key: number]: string } = {
+export const SEARCH_APPLY_STATUS: { [key: number]: string } = {
   1: '承認待ち',
   2: '却下',
-  3: '精算待ち',
-  4: '精算済'
+  3: '承認済',
+  5: '精算済',
+};
+
+export const APPLY_STATUS: { [key: number]: string } = {
+  0: '申請',
+  1: '承認待ち',
+  2: '却下',
+  3: '承認済',
+  4: '確認済',
+  5: '精算済',
+};
+
+export const Enum_APPLY_STATUS = {
+  Apply: 0,
+  Pending: 1,
+  Rejected: 2,
+  Approved: 3,
+  Confirmed: 4,
+  Settled: 5,
+} as const;
+
+export type ApplyStatus = typeof Enum_APPLY_STATUS[keyof typeof Enum_APPLY_STATUS];
+
+// ラベルマップ（数値→文字列）
+export const Enum_APPLY_STATUS_LABELS: { [key in ApplyStatus]: string } = {
+  [Enum_APPLY_STATUS.Apply]: '承認待ち',
+  [Enum_APPLY_STATUS.Pending]: '承認待ち',
+  [Enum_APPLY_STATUS.Rejected]: '却下',
+  [Enum_APPLY_STATUS.Approved]: '承認済',
+  [Enum_APPLY_STATUS.Confirmed]: '確認済',
+  [Enum_APPLY_STATUS.Settled]: '精算済',
+};
+
+export type TripApplyDetail = TripApplyFormValues & {
+  request_user_id: number;  // 申請者のユーザーIDを明示的に含める
+  approval_histories: ApprovalHistory[];
+  next_user_id: number;
+  next_step_type: number;
+  approval_steps: ApprovalStepWithApprover[];
+  request_user: User;
 };
 
 export const TRANSPORT_MODE_OPTIONS = [

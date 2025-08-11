@@ -41,6 +41,8 @@ services:
       AWS_SECRET_ACCESS_KEY: password
       AWS_DEFAULT_REGION: ap-northeast-1
       AWS_BUCKET: apply-local
+    env_file:
+      - .env
     ports:
       - "8000:8000"
       - "5678:5678"  # debugpy用

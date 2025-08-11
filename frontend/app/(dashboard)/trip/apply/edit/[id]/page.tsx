@@ -2,34 +2,36 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import TripPreApplyForm from '@/src/features/trip/components/tripPreApplyForm';
-import type { TripApplyFormValues, TripPreApplyDetail } from '@/src/features/trip/types';
+import TripApplyForm from '@/src/features/trip/components/tripApplyForm';
+import type { TripApplyFormValues, TripApplyDetail } from '@/src/features/trip/types';
 import { Enum_PRE_APPLY_STATUS } from '@/src/features/trip/types';
 import {
-  getTripPreApplyDetail,
-  approveTripPreApply,
-  rejectTripPreApply,
-  deleteTripPreApply,
-  updateTripPreApply,
-  confirmTripPreApply
-} from '@/src/features/trip/api/tripPreApplyApi';
+  getTripApplyDetail,
+  approveTripApply,
+  rejectTripApply,
+  deleteTripApply,
+  updateTripApply,
+  confirmTripApply,
+  settleTripApply
+} from '@/src/features/trip/api/tripApplyApi';
 import { useSession } from 'next-auth/react';
 import Button from '@mui/material/Button';
 import DeleteIcon from '@mui/icons-material/Delete';
 
-type Mode = 'applicant_view_only' | 'applicant_edit' | 'approver' | 'special_department_view' | 'checker';
+type Mode = 'applicant_view_only' | 'applicant_edit' | 'approver' | 'special_department_view' | 'checker' | 'settle';
 
-export default function TripPreApplyEditPage() {
+export default function TripApplyEditPage() {
   const params = useParams();
   const id = Number(params.id);
   const router = useRouter();
   const { data: session, status: sessionStatus } = useSession();
 
-  const [initialData, setInitialData] = useState<TripPreApplyDetail | null>(null);
+  const [initialData, setInitialData] = useState<TripApplyDetail | null>(null);
   const [mode, setMode] = useState<Mode | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [isUserTurn, setIsUserTurn] = useState(false);
+  const [parentRequestId, setParentRequestId] = useState<number | null>(null);
 
   const user = session?.user;
   const canDelete = mode === 'approver';
@@ -40,9 +42,13 @@ export default function TripPreApplyEditPage() {
   const STATUS_REJECTED = Enum_PRE_APPLY_STATUS.Rejected;
   const STATUS_CONFIRMED = Enum_PRE_APPLY_STATUS.Confirmed;
 
-  // 特別部署IDリスト（適宜環境変数などで管理を）
+  // 特別部署IDリスト
   const specialDepartment = process.env.NEXT_PUBLIC_SPECIAL_DEPARTMENT_IDS ?? '';
   const SPECIAL_DEPARTMENT_IDS = specialDepartment.split(',').map(id => Number(id.trim()));
+
+  // 経理課部署ID
+  const accountingDepartments = process.env.NEXT_PUBLIC_ACCOUNTING_DEPARTMENT_IDS ?? '';
+  const ACCOUNTING_DEPARTMENT_IDS = accountingDepartments.split(',').map(id => Number(id.trim()));
 
   // 申請詳細取得
   useEffect(() => {
@@ -51,11 +57,12 @@ export default function TripPreApplyEditPage() {
     const fetchDetail = async () => {
       setLoading(true);
       try {
-        const detail = await getTripPreApplyDetail(id);
+        const detail = await getTripApplyDetail(id);
         setInitialData(detail);
+        setParentRequestId(detail.parent_request_id ?? null);
       } catch (error) {
         alert('申請情報の取得に失敗しました');
-        router.push('/trip/pre-apply');
+        router.push('/trip/apply');
       } finally {
         setLoading(false);
       }
@@ -97,7 +104,18 @@ export default function TripPreApplyEditPage() {
       }
     }
 
-    // ③特別部署は閲覧のみ（ただし①②が優先）
+    // ③経理課 & 精算申請 & 承認済の場合、精算処理モード
+    if (
+      userDepartmentId &&
+      ACCOUNTING_DEPARTMENT_IDS.includes(userDepartmentId) &&
+      initialData.request_type === 2 && // 精算申請
+      initialData.status === STATUS_APPROVED
+    ) {
+      setMode('settle');
+      return;
+    }
+
+    // ④特別部署は閲覧のみ（ただし①②③が優先）
     if (userDepartmentId && SPECIAL_DEPARTMENT_IDS.includes(userDepartmentId)) {
       setMode('special_department_view');
       return;
@@ -118,8 +136,8 @@ export default function TripPreApplyEditPage() {
 
     setSubmitting(true);
     try {
-      await deleteTripPreApply(id);
-      router.push('/trip/pre-apply?message=削除が完了しました');
+      await deleteTripApply(id);
+      router.push('/trip/apply?message=削除が完了しました');
     } catch {
       alert('削除に失敗しました');
     } finally {
@@ -135,8 +153,8 @@ export default function TripPreApplyEditPage() {
         setSubmitting(false);
         return;
       }
-      await updateTripPreApply(initialData.id, data);
-      router.push('/trip/pre-apply?message=再申請が完了しました');
+      await updateTripApply(initialData.id, data);
+      router.push('/trip/apply?message=再申請が完了しました');
     } catch {
       alert('保存に失敗しました');
     } finally {
@@ -144,14 +162,14 @@ export default function TripPreApplyEditPage() {
     }
   };
 
-  // 承認者用、承認・却下
+  // 承認者、承認処理
   const handleApprove = useCallback(
     async (comment: string) => {
       if (!id) return;
       setSubmitting(true);
       try {
-        await approveTripPreApply(id, comment);
-        router.push('/trip/pre-apply?message=承認が完了しました');
+        await approveTripApply(id, comment);
+        router.push('/trip/apply?message=承認が完了しました');
       } catch (error) {
         alert('承認に失敗しました');
       } finally {
@@ -161,14 +179,14 @@ export default function TripPreApplyEditPage() {
     [id, router]
   );
 
-  // 承認者用、却下
+  // 承認者、却下処理
   const handleReject = useCallback(
     async (comment: string) => {
       if (!id) return;
       setSubmitting(true);
       try {
-        await rejectTripPreApply(id, comment);
-        router.push('/trip/pre-apply?message=却下が完了しました');
+        await rejectTripApply(id, comment);
+        router.push('/trip/apply?message=却下が完了しました');
       } catch (error) {
         alert('却下に失敗しました');
       } finally {
@@ -184,10 +202,27 @@ export default function TripPreApplyEditPage() {
       if (!id) return;
       setSubmitting(true);
       try {
-        await confirmTripPreApply(id, comment);
-        router.push('/trip/pre-apply?message=確認が完了しました');
+        await confirmTripApply(id, comment);
+        router.push('/trip/apply?message=確認が完了しました');
       } catch (error) {
         alert('確認に失敗しました');
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [id, router]
+  );
+
+  // 経理課、精算済変更用
+  const handleSettle = useCallback(
+    async (comment: string) => {
+      if (!id) return;
+      setSubmitting(true);
+      try {
+        await settleTripApply(id, comment);
+        router.push('/trip/apply?message=精算処理が完了しました');
+      } catch (error) {
+        alert('精算処理に失敗しました');
       } finally {
         setSubmitting(false);
       }
@@ -202,7 +237,7 @@ export default function TripPreApplyEditPage() {
   return (
     <div>
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h1 className="mb-4">出張事前申請詳細</h1>
+        <h1 className="mb-4">出張精算申請詳細</h1>
         {canDelete && (
           <Button
             variant="contained"
@@ -214,8 +249,10 @@ export default function TripPreApplyEditPage() {
           </Button>
         )}
       </div>
-      <TripPreApplyForm
+      <TripApplyForm
+        id={id ?? undefined}
         initialData={initialData ?? undefined}
+        initialParentRequestId={parentRequestId ?? undefined}
         mode={mode}
         isUserTurn={isUserTurn}
         submitLabel={mode === 'applicant_edit' ? '再申請' : undefined}
@@ -224,6 +261,7 @@ export default function TripPreApplyEditPage() {
         onApprove={mode === 'approver' ? handleApprove : undefined}
         onReject={mode === 'approver' ? handleReject : undefined}
         onConfirm={mode === 'checker' ? handleConfirm : undefined}
+        onSettle={mode === 'settle' ? handleSettle : undefined}
       />
     </div>
   );
