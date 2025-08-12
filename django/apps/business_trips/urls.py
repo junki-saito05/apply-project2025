@@ -18,6 +18,8 @@ from .views import BusinessTripRequestApplyUpdateView
 from .views import BusinessTripRequestApplyConfirmView
 from .views import BusinessTripRequestApplyDeleteView
 from .views import BusinessTripRequestApplySettle
+from .views import BusinessTripRequestPendingPreApplyList
+from .views import BusinessTripRequestPendingApplyList
 
 urlpatterns = [
     path('api/business-trip-requests/pre-apply/create/', BusinessTripRequestPreApplyCreateView.as_view()),
@@ -38,4 +40,6 @@ urlpatterns = [
     path("api/business-trip-requests/apply/confirm/<int:pk>/", BusinessTripRequestApplyConfirmView.as_view()),
     path("api/business-trip-requests/apply/delete/<int:pk>/", BusinessTripRequestApplyDeleteView.as_view()),
     path("api/business-trip-requests/apply/settle/<int:pk>/", BusinessTripRequestApplySettle.as_view()),
+    path("api/business-trip-apply/pending-pre-applies/", BusinessTripRequestPendingPreApplyList.as_view()),
+    path("api/business-trip-apply/pending-applies/", BusinessTripRequestPendingApplyList.as_view()),
 ]

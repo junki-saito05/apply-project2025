@@ -15,6 +15,7 @@ from apps.departments.models import Department
 from apps.approvals.models import ApprovalStepMaster
 from django.db import transaction
 from django.db.models import Q
+from django.db.models import Max
 from django.shortcuts import get_object_or_404
 from apps.business_trips.serializers import BusinessTripRequestListSerializer, BusinessTripRequestPreApplyDetailSerializer, ApprovalActionSerializer, ApprovalActionSerializer, BusinessTripRequestWithRouteSerializer, BusinessTripRequestApplyDetailSerializer
 from django.conf import settings
@@ -1111,3 +1112,78 @@ class BusinessTripRequestApplySettle(APIView):
 
         result_serializer = BusinessTripRequestWithRouteSerializer(instance)
         return Response(result_serializer.data, status=status.HTTP_200_OK)
+
+# 最新履歴の承認待ちリクエストを取得
+def get_pending_trip_requests(user, request_type):
+    # ①申請全体が承認待ち（status=PENDING）のものをまず抽出
+    pending_requests_qs = BusinessTripRequest.objects.filter(
+        status=BusinessTripRequest.Status.PENDING,
+        request_type=request_type,
+        deleted_at__isnull=True
+    ).values('id')
+
+    if not pending_requests_qs.exists():
+        return BusinessTripRequest.objects.none()
+
+    # ②それらに紐づく最新 ApprovalHistory の id を取得
+    latest_histories_qs = (
+        ApprovalHistory.objects
+        .filter(
+            business_trip_request_id__in=pending_requests_qs,
+            deleted_at__isnull=True
+        )
+        .values('business_trip_request_id')
+        .annotate(latest_id=Max('id'))
+    )
+    latest_ids = [row['latest_id'] for row in latest_histories_qs]
+
+    if not latest_ids:
+        return BusinessTripRequest.objects.none()
+
+    # ③最新履歴の中で next_user が自分のものを抽出
+    my_latest_pending_ids = ApprovalHistory.objects.filter(
+        id__in=latest_ids,
+        next_user=user,
+        deleted_at__isnull=True
+    ).values_list('business_trip_request_id', flat=True)
+
+    if not my_latest_pending_ids:
+        return BusinessTripRequest.objects.none()
+
+    # ④最終的に BusinessTripRequest を返す
+    return (
+        BusinessTripRequest.objects
+        .filter(
+            id__in=my_latest_pending_ids,
+            request_type=request_type,
+            status=BusinessTripRequest.Status.PENDING,
+            deleted_at__isnull=True
+        )
+        .select_related('request_user')
+        .order_by('-created_at')
+    )
+
+# 出張事前申請、ダッシュボード表示用
+class BusinessTripRequestPendingPreApplyList(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        trip_requests = get_pending_trip_requests(
+            request.user,
+            BusinessTripRequest.RequestType.PRE_APPLY
+        )
+        serializer = BusinessTripRequestListSerializer(trip_requests, many=True)
+        return Response(serializer.data)
+
+
+# 出張精算申請、ダッシュボード表示用
+class BusinessTripRequestPendingApplyList(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        trip_requests = get_pending_trip_requests(
+            request.user,
+            BusinessTripRequest.RequestType.APPLY
+        )
+        serializer = BusinessTripRequestListSerializer(trip_requests, many=True)
+        return Response(serializer.data)
