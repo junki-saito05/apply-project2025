@@ -53,6 +53,14 @@ class GoogleTokenView(APIView):
         return Response({
             "access": str(refresh.access_token),
             "refresh": str(refresh),
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "username": user.username,
+                "position": user.position,
+                "department_id": user.department_id,
+                "has_master_permission": user.has_master_permission,
+            }
         }, status=status.HTTP_200_OK)
 
 class MeView(APIView):
@@ -65,32 +73,6 @@ class MeView(APIView):
             'email': user.email,
             'has_master_permission': getattr(user, 'has_master_permission', False),
             'username': getattr(user, 'username'),
-            'position': getattr(user, 'position'),
-            'department_id': getattr(user.department, 'id'),
-        })
-
-class GoogleMeView(APIView):
-    permission_classes = [AllowAny]
-    authentication_classes = []
-
-    def get(self, request):
-        auth_header = request.headers.get('Authorization')
-        if not auth_header or not auth_header.startswith('Bearer '):
-            return Response({'detail': '認証情報がありません'}, status=status.HTTP_401_UNAUTHORIZED)
-        token = auth_header.split(' ')[1]
-        idinfo = verify_google_token(token)
-        if not idinfo:
-            return Response({'detail': 'トークンが無効です'}, status=status.HTTP_401_UNAUTHORIZED)
-        email = idinfo['email']
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            return Response({'detail': 'ユーザーが見つかりません'}, status=status.HTTP_404_NOT_FOUND)
-        return Response({
-            'id': getattr(user, 'id'),
-            'email': user.email,
-            'has_master_permission': getattr(user, 'has_master_permission', False),
-            'username': user.username,
             'position': getattr(user, 'position'),
             'department_id': getattr(user.department, 'id'),
         })
