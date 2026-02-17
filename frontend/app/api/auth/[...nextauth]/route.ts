@@ -101,25 +101,15 @@ const handler = NextAuth({
           const jwtTokens = await tokenRes.json();
           token.access = jwtTokens.access;
           token.refresh = jwtTokens.refresh;
+          // GoogleのIDトークンでDjangoのユーザー情報を取得
+          token.id = jwtTokens.user.id;
+          token.email = jwtTokens.user.email;
+          token.username = jwtTokens.user.username;
+          token.position = jwtTokens.user.position;
+          token.department_id = jwtTokens.user.department_id;
+          token.hasMasterPermission = jwtTokens.user.has_master_permission;
         } else {
           console.error("Googleログイン→トークン取得失敗:", await tokenRes.text());
-        }
-        // GoogleのIDトークンでDjangoのユーザー情報を取得
-        const res = await fetch(`${djangoApiUrl}/api/users/me/google/`, {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${account.id_token}`,
-          },
-        });
-        token.id_token = account.id_token;
-        if (res.ok) {
-          const userData = await res.json();
-          token.hasMasterPermission = Boolean(userData.has_master_permission);
-          token.id = userData.id;
-          token.email = userData.email;
-          token.username = userData.username;
-          token.position = userData.position;
-          token.department_id = userData.department_id;
         }
       }
 
